@@ -42,3 +42,7 @@ scan-tar.py
 test-java/
 node_modules/
 __pycache__/
+
+# debug dumps
+*.html
+

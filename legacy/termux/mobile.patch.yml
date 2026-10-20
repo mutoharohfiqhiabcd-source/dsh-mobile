@@ -1,0 +1,29 @@
+# dsh-mobile —— 手机端访问用的 DSH 叠加配置（LAN 模式）
+#
+# 用法（不改动任何已有 profile 文件）：
+#   dsh --profile web --patch mobile.patch.yml --no-open
+#
+# 作用：把 Web 服务从「只听 127.0.0.1」改成「听 0.0.0.0」，让同一 Wi-Fi 下的
+#       手机能连上。绑定 0.0.0.0 后 DSH 会自动把本机所有 LAN IPv4 字面量加进
+#       /api 信任表（web-app 的 resolveLanTrust），因此手机用
+#       http://<电脑IP>:3080 访问时 Host / Origin 校验能通过，不需要再手写
+#       trustedHosts。
+#
+# 已验证（2026-10-08，--dump-config 只解析配置、不起服务器）：
+#   node --import tsx/esm apps/cli/src/bin.ts --profile web \
+#     --patch mobile.patch.yml --dump-config
+#   → exit 0，合成结果 host: 0.0.0.0，并且 inject: [webStartup] 保留。
+#
+# 注意（踩过的坑）：overlay 里的 !!js 表达式必须写成「带引号的标量」。
+#   ✅ port: !!js "ctx.webStartup.port ?? 3080"
+#   ❌ port: !!js ctx.webStartup.port ?? 3080      → 解析歧义
+#   ❌ trustedHosts: !!js [...ctx.webRuntime.trustedHosts, 'x']   → unknown tag
+#      （!!js 标签只接受标量节点，flow 序列会报 unknown tag）
+
+- id: webserver
+  config:
+    host: '0.0.0.0'
+    port: !!js "ctx.webStartup.port ?? 3080"
+    compression: gzip
+    compressionLevel: 1
+    compressionThresholdBytes: 1024

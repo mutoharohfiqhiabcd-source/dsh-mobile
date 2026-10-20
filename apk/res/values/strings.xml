@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">DSH</string>
+    <string name="status_checking">正在检测 DSH 是否在运行…</string>
+    <string name="status_stopped">DSH 未运行</string>
+    <string name="status_running">DSH 正在运行</string>
+    <string name="btn_start">启动 DSH</string>
+    <string name="btn_paste">粘贴 token 地址</string>
+    <string name="btn_retry">重新检测</string>
+    <string name="btn_open_termux">打开 Termux</string>
+    <string name="hint_started">点「启动 DSH」后会通过 Termux 拉起服务，首次约 10-20 秒。</string>
+    <string name="hint_token">首次使用需要在 Termux 里运行 bash ~/dsh-app.sh 启动，然后把带 token 的地址粘贴到这里（只需一次，之后 30 天免登录）。</string>
+    <string name="dialog_token_title">粘贴带 token 的地址</string>
+    <string name="dialog_token_hint">http://127.0.0.1:3080/?token=…</string>
+    <string name="toast_bad_url">地址格式不对，应该以 http://127.0.0.1:3080/ 开头并包含 token=</string>
+    <string name="toast_termux_missing">没找到 Termux。请先安装 Termux 并在里面跑通 DSH。</string>
+    <string name="toast_start_sent">已请求 Termux 启动，正在等待…</string>
+    <string name="toast_timeout">等待超时：请到 Termux 里手动运行 bash ~/dsh-app.sh</string>
+</resources>

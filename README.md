@@ -33,6 +33,7 @@ Debian 12 (aarch64, glibc)  →  Node.js 24  →  DSH web server (127.0.0.1:3080
 - **零配置**：启动时自动解压 rootfs、自动启动 proot/node、自动捕获 `dsh web: http://127.0.0.1:3080/?token=...` 并打开 WebView
 - **不需要 root**：proot 是用户态实现，普通 App 权限即可
 - **离线可用**：不依赖任何远程服务器（可选局域网补丁通道除外）
+- **后台保活**：前台服务 + 常驻通知，切后台 / 从最近任务划掉后 DSH 继续运行；通知里可直接停止
 - **旧 WebView 兼容**：注入 ES2023/2024 polyfill（`Promise.withResolvers`、`AbortSignal.any` 等），Android 8+ 老内核也能跑 DSH 前端
 - **修复补丁机制**：内置 `assets/overlay` 覆盖层 + 可选 `patch.tar.gz` 局域网补丁，小修复不用重新打包
 - **可诊断**：内置日志（含网页 console / JS 异常 / WebSocket 生命周期），悬浮「⋯」按钮随时查看、复制
@@ -72,7 +73,7 @@ powershell -ExecutionPolicy Bypass -File build-apk.ps1
 - 只有 **arm64-v8a**（没有 x86/armv7 的 rootfs）
 - rootfs 与原生模块都是 `linux-arm64 + glibc`，x86 模拟器跑不了
 - proot 有性能开销（约 10–30%），耗电比原生高
-- App 被系统杀掉后 DSH 进程会中断（暂无前台服务保活）
+- 极端情况下系统仍可能回收进程（省电策略、低内存）；长期后台使用建议把 App 加入电池优化白名单
 - 894 MB 体积主要来自 rootfs（复制式 node_modules）；后续可以做去重压缩
 - 仅用于个人学习/自用，非官方 DSH 发行版
 

@@ -65,9 +65,18 @@ classes.dex            约 45 KB：MainActivity / ProotServer / RuntimeInstaller
 | 文件 | 职责 |
 |---|---|
 | `MainActivity.java` | 界面状态机（启动/解压/运行/失败）、WebView 配置、token 捕获回调、日志环、悬浮诊断菜单、权限请求、JS 日志桥 |
+| `DshService.java` | 前台服务：常驻通知 + 保活；通知内「停止 DSH」；跨 Activity 实例复用同一 proot 进程 |
 | `ProotServer.java` | 拼 proot 命令行、启动/停止子进程、把 stdout/stderr 送给监听者、正则捕获 token URL |
 | `RuntimeInstaller.java` | 二进制安装、rootfs 有效性检查、解压调度、overlay/patch 应用、环境诊断 |
 | `TarGzExtractor.java` | 纯 JDK 的 tar.gz 解析器（512 字节头、GNU 长名、PAX、符号链接/硬链接、权限位、路径穿越防护） |
+
+### 后台保活（前台服务）
+
+- DSH 就绪后启动 `DshService`（`startForeground` + 常驻通知），Android 会优先保留有前台服务的进程；
+  proot 子进程属于本应用进程，因此进程活着 DSH 就活着。
+- `MainActivity.onDestroy` **不再**停止 proot：界面销毁（切后台/划掉任务）后 DSH 继续运行；
+  重新打开 App 时通过静态引用 `sServer` / `sTokenUrl` 直接恢复同一个会话。
+- 退出入口只有两个：通知栏的「停止 DSH」，或 App 内「⋯ → 停止 DSH 并退出」。
 
 ## 为什么是「proot + Debian」
 

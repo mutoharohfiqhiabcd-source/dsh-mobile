@@ -1,15 +1,15 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.dsh.mobile"
-    android:versionCode="15"
-    android:versionName="4.2">
+    android:versionCode="16"
+    android:versionName="4.3">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
-    <!-- 璁?DSH 鑳借闂墜鏈烘枃浠讹紙targetSdk 28 + legacy 瀛樺偍锛屾巿鏉冨悗 /sdcard 鍙鍐欙級 -->
+    <!-- 让 DSH 能访问手机文件（targetSdk 28 + legacy 存储，授权后 /sdcard 可读写） -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <!-- 淇濇寔鍚庡彴杩愯锛堝悗缁帴鍓嶅彴鏈嶅姟鐢級 -->
+    <!-- 前台服务：切后台 / 划掉界面后 DSH 继续运行 -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
@@ -34,5 +34,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- 前台服务：常驻通知 + 保活（targetSdk 28，无需 foregroundServiceType） -->
+        <service
+            android:name=".DshService"
+            android:exported="false"
+            android:stopWithTask="false" />
     </application>
 </manifest>

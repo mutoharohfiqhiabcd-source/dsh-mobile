@@ -68,6 +68,18 @@ public class MainActivity extends Activity {
     private final StringBuilder logs = new StringBuilder();
     private volatile boolean importing;
 
+    // 跨 Activity 实例共享的运行状态（配合前台服务保活：界面销毁后 DSH 继续跑）
+    private static ProotServer sServer;
+    private static String sTokenUrl;
+
+    public static void stopSharedServer() {
+        if (sServer != null) {
+            sServer.stop();
+            sServer = null;
+        }
+        sTokenUrl = null;
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -103,6 +115,15 @@ public class MainActivity extends Activity {
         btnLog.setOnClickListener(v -> showLogDialog());
         btnTermux.setOnClickListener(v -> openTermux());
         btnFloat.setOnClickListener(v -> showDevMenu());
+
+        // 前台服务保活：如果 DSH 已在后台运行，直接恢复到界面，不重复启动
+        if (sServer != null && sServer.isRunning() && sTokenUrl != null) {
+            appendLog("检测到 DSH 已在后台运行，恢复界面");
+            appendLog(RuntimeInstaller.describeEnv(this));
+            startDshService();
+            onDshReady(sTokenUrl);
+            return;
+        }
 
         appendLog("DSH Mobile 启动");
         appendLog(RuntimeInstaller.describeEnv(this));
@@ -280,12 +301,13 @@ public class MainActivity extends Activity {
     private void showDevMenu() {
         new AlertDialog.Builder(this)
                 .setTitle("DSH 控制台")
-                .setItems(new String[]{"查看日志", "复制日志", "重启 DSH", "重新加载页面"}, (d, which) -> {
+                .setItems(new String[]{"查看日志", "复制日志", "重启 DSH", "重新加载页面", "停止 DSH 并退出"}, (d, which) -> {
                     switch (which) {
                         case 0: showLogDialog(); break;
                         case 1: copyLogToClipboard(); break;
                         case 2: restartServer(); break;
                         case 3: web.reload(); break;
+                        case 4: stopAndExit(); break;
                         default: break;
                     }
                 })
@@ -303,9 +325,39 @@ public class MainActivity extends Activity {
         appendLog("手动重启 DSH…");
         if (server != null) server.stop();
         server = null;
+        sServer = null;
+        sTokenUrl = null;
+        stopDshService();
         web.loadUrl("about:blank");
         showBusy("正在重启 DSH…");
         ui.postDelayed(this::startServer, 500);
+    }
+
+    // ── 前台服务（后台保活）────────────────────────────────────────────
+
+    private void startDshService() {
+        try {
+            Intent it = new Intent(this, DshService.class).setAction(DshService.ACTION_START);
+            if (Build.VERSION.SDK_INT >= 26) startForegroundService(it);
+            else startService(it);
+        } catch (Exception e) {
+            appendLog("前台服务启动失败: " + e);
+        }
+    }
+
+    private void stopDshService() {
+        try {
+            stopService(new Intent(this, DshService.class));
+        } catch (Exception ignored) {
+        }
+    }
+
+    /** 用户主动退出：停 proot + 停前台服务 + 关闭界面。 */
+    private void stopAndExit() {
+        appendLog("用户请求停止 DSH");
+        stopSharedServer();
+        stopDshService();
+        finish();
     }
 
     // ── rootfs 导入 ─────────────────────────────────────────────────────
@@ -424,17 +476,23 @@ public class MainActivity extends Activity {
         }
         showBusy("正在启动 DSH（proot → Debian → node）…");
         server = new ProotServer();
+        sServer = server;
         try {
             server.start(this, new ProotServer.Listener() {
                 @Override public void onLog(String line) {
                     ui.post(() -> appendLog(line));
                 }
                 @Override public void onReady(String tokenUrl) {
-                    ui.post(() -> onDshReady(tokenUrl));
+                    sTokenUrl = tokenUrl;
+                    ui.post(() -> {
+                        startDshService();
+                        onDshReady(tokenUrl);
+                    });
                 }
                 @Override public void onExit(int code) {
                     ui.post(() -> {
                         appendLog("DSH 进程退出，退出码 " + code);
+                        stopDshService();
                         if (web.getVisibility() != View.VISIBLE) {
                             showImportUi("DSH 启动失败（退出码 " + code + "）\n点「查看日志」复制日志发给开发者");
                         } else {
@@ -519,10 +577,14 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
-        if (server != null) server.stop();
-        if (web != null) {
-            web.loadUrl("about:blank");
-            web.destroy();
+        // 不停止 DSH 进程：前台服务会让它在后台继续运行，重新打开 App 直接恢复界面。
+        // 需要真正退出时用「⋯ → 停止 DSH 并退出」或通知栏的「停止 DSH」。
+        try {
+            if (web != null) {
+                web.loadUrl("about:blank");
+                web.destroy();
+            }
+        } catch (Exception ignored) {
         }
         super.onDestroy();
     }

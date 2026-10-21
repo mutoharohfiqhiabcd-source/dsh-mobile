@@ -40,7 +40,9 @@ Debian 12 (aarch64, glibc)  →  Node.js 24  →  DSH web server (127.0.0.1:3080
 
 ## 安装
 
-1. 下载 `DSH-Mobile.apk`（Release 页）
+**下载**：[Releases 页面](https://github.com/mutoharohfiqabcd-source/dsh-mobile/releases/latest) 里的 `DSH-Mobile-*.apk`（约 894 MB）
+
+1. 下载 APK（Release 资产）
 2. 允许「安装未知来源应用」，安装
 3. 首次打开会请求存储权限（允许后 DSH 可以读写手机文件）；解压 rootfs 约需 8–15 分钟
 4. 解压完成自动进入 DSH 界面

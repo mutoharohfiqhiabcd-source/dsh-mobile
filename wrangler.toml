@@ -1,0 +1,11 @@
+﻿# Cloudflare Pages 配置
+# 方式一（推荐，Git 集成）：连接 GitHub 仓库 →
+#   Framework preset: None
+#   Build command: （留空）
+#   Build output directory: site
+#
+# 方式二（CLI 直传）：
+#   npx wrangler pages deploy site --project-name dsh-mobile
+name = "dsh-mobile"
+pages_build_output_dir = "site"
+compatibility_date = "2026-10-01"

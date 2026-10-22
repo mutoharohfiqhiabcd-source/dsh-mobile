@@ -1,0 +1,11 @@
+﻿# Netlify 配置（Git 集成 / CLI 部署都可直接用）
+# 连接仓库后：Build command 留空，Publish directory 填 site
+[build]
+  publish = "site"
+  command = ""
+
+# 国内访问优化：静态资源长缓存
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

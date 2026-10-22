@@ -1,123 +1,82 @@
-# DSH Mobile
+﻿# DSH Mobile
 
-**把 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（DSH）打包成一个 Android APK：安装、点图标、直接用。**
+**鎶?[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)锛圖SH锛夋墦鍖呮垚涓€涓?Android APK锛氬畨瑁呫€佺偣鍥炬爣銆佺洿鎺ョ敤銆?*
 
-不需要电脑、不需要 Termux、不需要 root、不需要导入 rootfs、不需要粘贴 token —— 所有运行时（Debian + Node.js + DSH 本体）都在 APK 里，安装包 894 MB。
-
-![DSH Mobile 在手机上运行](docs/images/screenshot-home.png)
+涓嶉渶瑕佺數鑴戙€佷笉闇€瑕?Termux銆佷笉闇€瑕?root銆佷笉闇€瑕佸鍏?rootfs銆佷笉闇€瑕佺矘璐?token 鈥斺€?鎵€鏈夎繍琛屾椂锛圖ebian + Node.js + DSH 鏈綋锛夐兘鍦?APK 閲岋紝瀹夎鍖?894 MB銆?
+![DSH Mobile 鍦ㄦ墜鏈轰笂杩愯](docs/images/screenshot-home.png)
 
 ---
 
-## 这是什么
-
-官方 DSH 运行时支持 Linux x64/arm64、macOS、Windows，**没有 Android**。本项目用一条「免 root 的 Linux 用户空间」路线把 DSH 原样搬到手机上：
+## 杩欐槸浠€涔?
+瀹樻柟 DSH 杩愯鏃舵敮鎸?Linux x64/arm64銆乵acOS銆乄indows锛?*娌℃湁 Android**銆傛湰椤圭洰鐢ㄤ竴鏉°€屽厤 root 鐨?Linux 鐢ㄦ埛绌洪棿銆嶈矾绾挎妸 DSH 鍘熸牱鎼埌鎵嬫満涓婏細
 
 ```
-APK（assets 里塞着 Debian rootfs + Node 24 + DSH 源码）
-  │  首次启动：解压到 App 私有目录（约 3 GB）
-  ▼
-proot（用户态 chroot/ptrace，无需 root、无需内核支持）
-  │
-  ▼
-Debian 12 (aarch64, glibc)  →  Node.js 24  →  DSH web server (127.0.0.1:3080)
-                                                    │
-                                                    ▼
-                                         App 内置 WebView 直接打开
+APK锛坅ssets 閲屽鐫€ Debian rootfs + Node 24 + DSH 婧愮爜锛?  鈹? 棣栨鍚姩锛氳В鍘嬪埌 App 绉佹湁鐩綍锛堢害 3 GB锛?  鈻?proot锛堢敤鎴锋€?chroot/ptrace锛屾棤闇€ root銆佹棤闇€鍐呮牳鏀寔锛?  鈹?  鈻?Debian 12 (aarch64, glibc)  鈫? Node.js 24  鈫? DSH web server (127.0.0.1:3080)
+                                                    鈹?                                                    鈻?                                         App 鍐呯疆 WebView 鐩存帴鎵撳紑
 ```
 
-官方 DSH 的目标平台里 **Linux arm64 + glibc 是支持的**，而 Android 自带的 Bionic libc 不兼容（sharp、node-pty、native/system 等都会崩）。所以套一层 Debian 就等于把「Android」伪装成了「官方支持的 linux-arm64」—— 这是整条路线能成立的关键。
+瀹樻柟 DSH 鐨勭洰鏍囧钩鍙伴噷 **Linux arm64 + glibc 鏄敮鎸佺殑**锛岃€?Android 鑷甫鐨?Bionic libc 涓嶅吋瀹癸紙sharp銆乶ode-pty銆乶ative/system 绛夐兘浼氬穿锛夈€傛墍浠ュ涓€灞?Debian 灏辩瓑浜庢妸銆孉ndroid銆嶄吉瑁呮垚浜嗐€屽畼鏂规敮鎸佺殑 linux-arm64銆嶁€斺€?杩欐槸鏁存潯璺嚎鑳芥垚绔嬬殑鍏抽敭銆?
+## 鐗规€?
+- **鍗曟枃浠跺畨瑁?*锛氫竴涓?APK 鍖呭惈杩愯鏃?+ DSH锛岃瀹屽嵆鐢?- **闆堕厤缃?*锛氬惎鍔ㄦ椂鑷姩瑙ｅ帇 rootfs銆佽嚜鍔ㄥ惎鍔?proot/node銆佽嚜鍔ㄦ崟鑾?`dsh web: http://127.0.0.1:3080/?token=...` 骞舵墦寮€ WebView
+- **涓嶉渶瑕?root**锛歱root 鏄敤鎴锋€佸疄鐜帮紝鏅€?App 鏉冮檺鍗冲彲
+- **绂荤嚎鍙敤**锛氫笉渚濊禆浠讳綍杩滅▼鏈嶅姟鍣紙鍙€夊眬鍩熺綉琛ヤ竵閫氶亾闄ゅ锛?- **鍚庡彴淇濇椿**锛氬墠鍙版湇鍔?+ 甯搁┗閫氱煡锛屽垏鍚庡彴 / 浠庢渶杩戜换鍔″垝鎺夊悗 DSH 缁х画杩愯锛涢€氱煡閲屽彲鐩存帴鍋滄
+- **鏃?WebView 鍏煎**锛氭敞鍏?ES2023/2024 polyfill锛坄Promise.withResolvers`銆乣AbortSignal.any` 绛夛級锛孉ndroid 8+ 鑰佸唴鏍镐篃鑳借窇 DSH 鍓嶇
+- **淇琛ヤ竵鏈哄埗**锛氬唴缃?`assets/overlay` 瑕嗙洊灞?+ 鍙€?`patch.tar.gz` 灞€鍩熺綉琛ヤ竵锛屽皬淇涓嶇敤閲嶆柊鎵撳寘
+- **鍙瘖鏂?*锛氬唴缃棩蹇楋紙鍚綉椤?console / JS 寮傚父 / WebSocket 鐢熷懡鍛ㄦ湡锛夛紝鎮诞銆屸嫰銆嶆寜閽殢鏃舵煡鐪嬨€佸鍒?
+## 瀹夎
 
-## 特性
+**涓嬭浇**锛歔Releases 椤甸潰](https://github.com/mutoharohfiqabcd-source/dsh-mobile/releases/latest) 閲岀殑 `DSH-Mobile-*.apk`锛堢害 894 MB锛?
+1. 涓嬭浇 APK锛圧elease 璧勪骇锛?2. 鍏佽銆屽畨瑁呮湭鐭ユ潵婧愬簲鐢ㄣ€嶏紝瀹夎
+3. 棣栨鎵撳紑浼氳姹傚瓨鍌ㄦ潈闄愶紙鍏佽鍚?DSH 鍙互璇诲啓鎵嬫満鏂囦欢锛夛紱瑙ｅ帇 rootfs 绾﹂渶 8鈥?5 鍒嗛挓
+4. 瑙ｅ帇瀹屾垚鑷姩杩涘叆 DSH 鐣岄潰
 
-- **单文件安装**：一个 APK 包含运行时 + DSH，装完即用
-- **零配置**：启动时自动解压 rootfs、自动启动 proot/node、自动捕获 `dsh web: http://127.0.0.1:3080/?token=...` 并打开 WebView
-- **不需要 root**：proot 是用户态实现，普通 App 权限即可
-- **离线可用**：不依赖任何远程服务器（可选局域网补丁通道除外）
-- **后台保活**：前台服务 + 常驻通知，切后台 / 从最近任务划掉后 DSH 继续运行；通知里可直接停止
-- **旧 WebView 兼容**：注入 ES2023/2024 polyfill（`Promise.withResolvers`、`AbortSignal.any` 等），Android 8+ 老内核也能跑 DSH 前端
-- **修复补丁机制**：内置 `assets/overlay` 覆盖层 + 可选 `patch.tar.gz` 局域网补丁，小修复不用重新打包
-- **可诊断**：内置日志（含网页 console / JS 异常 / WebSocket 生命周期），悬浮「⋯」按钮随时查看、复制
+**闇€瑕?*锛歛rm64 鎵嬫満銆丄ndroid 8.0+銆佺害 4 GB 绌洪棽绌洪棿锛圓PK 894 MB + 瑙ｅ帇鍚庣害 3 GB锛夈€?
+> APK **涓嶅寘鍚换浣?API key / 璐﹀彿淇℃伅**锛岄娆′娇鐢ㄨ鍦?DSH 閲岀櫥褰曟垨閰嶇疆鑷繁鐨勬ā鍨嬨€?
+## 鑷繁鏋勫缓
 
-## 安装
-
-**下载**：[Releases 页面](https://github.com/mutoharohfiqabcd-source/dsh-mobile/releases/latest) 里的 `DSH-Mobile-*.apk`（约 894 MB）
-
-1. 下载 APK（Release 资产）
-2. 允许「安装未知来源应用」，安装
-3. 首次打开会请求存储权限（允许后 DSH 可以读写手机文件）；解压 rootfs 约需 8–15 分钟
-4. 解压完成自动进入 DSH 界面
-
-**需要**：arm64 手机、Android 8.0+、约 4 GB 空闲空间（APK 894 MB + 解压后约 3 GB）。
-
-> APK **不包含任何 API key / 账号信息**，首次使用请在 DSH 里登录或配置自己的模型。
-
-## 自己构建
-
-完整步骤见 [docs/BUILD.md](docs/BUILD.md)。概要：
+瀹屾暣姝ラ瑙?[docs/BUILD.md](docs/BUILD.md)銆傛瑕侊細
 
 ```powershell
-# 0. 准备：JDK 17、Android build-tools 34.0.0、platform android-34
-# 1. 从 Termux 取出 proot 运行时（proot / loader / libtalloc / libandroid-shmem）
-bash scripts/fetch-runtime.sh            # 在 Termux 里跑，产出 apk/assets/runtime/
-# 2. 取原生模块（flock 的 system.node / landlock-run，来自 npm）
-bash scripts/fetch-overlay.sh            # 产出 apk/assets/overlay/
-# 3. 准备 rootfs.tar.gz（Debian + Node + DSH，见 rootfs/ 下的脚本）
-#    放到 apk/rootfs-asset/rootfs.tar.gz
-# 4. 打包
+# 0. 鍑嗗锛欽DK 17銆丄ndroid build-tools 34.0.0銆乸latform android-34
+# 1. 浠?Termux 鍙栧嚭 proot 杩愯鏃讹紙proot / loader / libtalloc / libandroid-shmem锛?bash scripts/fetch-runtime.sh            # 鍦?Termux 閲岃窇锛屼骇鍑?apk/assets/runtime/
+# 2. 鍙栧師鐢熸ā鍧楋紙flock 鐨?system.node / landlock-run锛屾潵鑷?npm锛?bash scripts/fetch-overlay.sh            # 浜у嚭 apk/assets/overlay/
+# 3. 鍑嗗 rootfs.tar.gz锛圖ebian + Node + DSH锛岃 rootfs/ 涓嬬殑鑴氭湰锛?#    鏀惧埌 apk/rootfs-asset/rootfs.tar.gz
+# 4. 鎵撳寘
 powershell -ExecutionPolicy Bypass -File build-apk.ps1
-# 产物：dist/DSH-Mobile.apk
+# 浜х墿锛歞ist/DSH-Mobile.apk
 ```
 
-没有 Gradle：构建链是 `aapt2 → javac → d8 → 追加 dex/rootfs → zipalign → apksigner`，全部手写在一个 PowerShell 脚本里（原因：Android 上可执行文件必须在 targetSdk ≤ 28 的应用里用老式打包方式，Gradle 那套在这里反而更麻烦）。
+娌℃湁 Gradle锛氭瀯寤洪摼鏄?`aapt2 鈫?javac 鈫?d8 鈫?杩藉姞 dex/rootfs 鈫?zipalign 鈫?apksigner`锛屽叏閮ㄦ墜鍐欏湪涓€涓?PowerShell 鑴氭湰閲岋紙鍘熷洜锛欰ndroid 涓婂彲鎵ц鏂囦欢蹇呴』鍦?targetSdk 鈮?28 鐨勫簲鐢ㄩ噷鐢ㄨ€佸紡鎵撳寘鏂瑰紡锛孏radle 閭ｅ鍦ㄨ繖閲屽弽鑰屾洿楹荤儲锛夈€?
+## 宸茬煡闄愬埗
 
-## 已知限制
-
-- 只有 **arm64-v8a**（没有 x86/armv7 的 rootfs）
-- rootfs 与原生模块都是 `linux-arm64 + glibc`，x86 模拟器跑不了
-- proot 有性能开销（约 10–30%），耗电比原生高
-- 极端情况下系统仍可能回收进程（省电策略、低内存）；长期后台使用建议把 App 加入电池优化白名单
-- 894 MB 体积主要来自 rootfs（复制式 node_modules）；后续可以做去重压缩
-- 仅用于个人学习/自用，非官方 DSH 发行版
-
-## 目录结构
+- 鍙湁 **arm64-v8a**锛堟病鏈?x86/armv7 鐨?rootfs锛?- rootfs 涓庡師鐢熸ā鍧楅兘鏄?`linux-arm64 + glibc`锛寈86 妯℃嫙鍣ㄨ窇涓嶄簡
+- proot 鏈夋€ц兘寮€閿€锛堢害 10鈥?0%锛夛紝鑰楃數姣斿師鐢熼珮
+- 鏋佺鎯呭喌涓嬬郴缁熶粛鍙兘鍥炴敹杩涚▼锛堢渷鐢电瓥鐣ャ€佷綆鍐呭瓨锛夛紱闀挎湡鍚庡彴浣跨敤寤鸿鎶?App 鍔犲叆鐢垫睜浼樺寲鐧藉悕鍗?- 894 MB 浣撶Н涓昏鏉ヨ嚜 rootfs锛堝鍒跺紡 node_modules锛夛紱鍚庣画鍙互鍋氬幓閲嶅帇缂?- 浠呯敤浜庝釜浜哄涔?鑷敤锛岄潪瀹樻柟 DSH 鍙戣鐗?
+## 鐩綍缁撴瀯
 
 ```
 apk/
-  AndroidManifest.xml        # targetSdk 28（关键：允许 exec/dlopen 应用私有目录）
-  src/com/dsh/mobile/        # MainActivity（WebView+日志桥）、ProotServer、RuntimeInstaller、TarGzExtractor
-  res/                       # 图标（官方 DSH favicon 渲染）、布局、主题
-  assets/
+  AndroidManifest.xml        # targetSdk 28锛堝叧閿細鍏佽 exec/dlopen 搴旂敤绉佹湁鐩綍锛?  src/com/dsh/mobile/        # MainActivity锛圵ebView+鏃ュ織妗ワ級銆丳rootServer銆丷untimeInstaller銆乀arGzExtractor
+  res/                       # 鍥炬爣锛堝畼鏂?DSH favicon 娓叉煋锛夈€佸竷灞€銆佷富棰?  assets/
     polyfill.js              # ES2023/2024 polyfill
-    instrument.js            # console/异常/WebSocket 诊断桥
-    runtime/                 # proot 二进制（由 scripts/fetch-runtime.sh 生成）
-    overlay/                 # 原生模块覆盖层（由 scripts/fetch-overlay.sh 生成）
-    rootfs.tar.gz            # 由 rootfs 脚本生成后放入（不入库）
-rootfs/                      # 在 Termux 里构建 Debian+Node+DSH rootfs 的脚本
-scripts/                     # 依赖获取、图标渲染、校验脚本
-legacy/termux/               # 早期「Termux 里跑」方案，仅存档参考
-docs/                        # 构建、架构、踩坑记录
-build-apk.ps1                # 无 Gradle 打包脚本
+    instrument.js            # console/寮傚父/WebSocket 璇婃柇妗?    runtime/                 # proot 浜岃繘鍒讹紙鐢?scripts/fetch-runtime.sh 鐢熸垚锛?    overlay/                 # 鍘熺敓妯″潡瑕嗙洊灞傦紙鐢?scripts/fetch-overlay.sh 鐢熸垚锛?    rootfs.tar.gz            # 鐢?rootfs 鑴氭湰鐢熸垚鍚庢斁鍏ワ紙涓嶅叆搴擄級
+rootfs/                      # 鍦?Termux 閲屾瀯寤?Debian+Node+DSH rootfs 鐨勮剼鏈?scripts/                     # 渚濊禆鑾峰彇銆佸浘鏍囨覆鏌撱€佹牎楠岃剼鏈?legacy/termux/               # 鏃╂湡銆孴ermux 閲岃窇銆嶆柟妗堬紝浠呭瓨妗ｅ弬鑰?docs/                        # 鏋勫缓銆佹灦鏋勩€佽俯鍧戣褰?build-apk.ps1                # 鏃?Gradle 鎵撳寘鑴氭湰
 ```
 
-## 踩坑记录
+## 韪╁潙璁板綍
 
-构建这类「把 Linux 运行时塞进 Android」的项目有一堆反直觉的坑（targetSdk、proot loader、`--link2symlink`、pnpm workspace、aapt2 大资产压缩、WebView 缺新 API……），都写在 [docs/LESSONS.md](docs/LESSONS.md) 里了，二次开发前建议先读。
+鏋勫缓杩欑被銆屾妸 Linux 杩愯鏃跺杩?Android銆嶇殑椤圭洰鏈変竴鍫嗗弽鐩磋鐨勫潙锛坱argetSdk銆乸root loader銆乣--link2symlink`銆乸npm workspace銆乤apt2 澶ц祫浜у帇缂┿€乄ebView 缂烘柊 API鈥︹€︼級锛岄兘鍐欏湪 [docs/LESSONS.md](docs/LESSONS.md) 閲屼簡锛屼簩娆″紑鍙戝墠寤鸿鍏堣銆?
+## 璁稿彲璇?
+鏈」鐩唬鐮佷互 [MIT](LICENSE) 鍙戝竷銆?
+绗笁鏂圭粍浠跺悇鑷伒寰叾璁稿彲璇侊細
+- **DeepSeek Harness**锛氳鍏朵粨搴撹鍙瘉锛涙湰椤圭洰鍙槸鎶婂畼鏂瑰彂琛屽唴瀹硅杩?APK
+- **proot**锛圱ermux 鏋勫缓锛夛細GPL-2.0
+- **Debian rootfs**锛氬悇杞欢鍖呭悇鑷殑璁稿彲璇侊紙涓昏涓?GPL/LGPL/BSD/MIT锛?- **Node.js**锛歁IT
+- **鍥炬爣**锛氬彇鑷?DSH 瀹樻柟浠撳簱 `apps/web/public/favicon.svg`
 
-## 许可证
+鏈」鐩笌 DeepSeek 瀹樻柟鏃犲叧锛屼粎渚涘涔犵爺绌躲€?
+## 鑷磋阿
 
-本项目代码以 [MIT](LICENSE) 发布。
-
-第三方组件各自遵循其许可证：
-- **DeepSeek Harness**：见其仓库许可证；本项目只是把官方发行内容装进 APK
-- **proot**（Termux 构建）：GPL-2.0
-- **Debian rootfs**：各软件包各自的许可证（主要为 GPL/LGPL/BSD/MIT）
-- **Node.js**：MIT
-- **图标**：取自 DSH 官方仓库 `apps/web/public/favicon.svg`
-
-本项目与 DeepSeek 官方无关，仅供学习研究。
-
-## 致谢
-
-- [deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) — DSH 本体
-- [Termux](https://termux.dev) / [proot](https://proot-me.github.io) — 免 root Linux 环境
-- [proot-distro](https://github.com/termux/proot-distro) — Debian rootfs 管理思路
+- [deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) 鈥?DSH 鏈綋
+- [Termux](https://termux.dev) / [proot](https://proot-me.github.io) 鈥?鍏?root Linux 鐜
+- [proot-distro](https://github.com/termux/proot-distro) 鈥?Debian rootfs 绠＄悊鎬濊矾

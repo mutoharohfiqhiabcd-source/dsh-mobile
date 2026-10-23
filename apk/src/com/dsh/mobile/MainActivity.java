@@ -100,7 +100,15 @@ public class MainActivity extends Activity {
         setupWebView();
         requestStoragePermission();
 
-        btnImport.setOnClickListener(v -> pickRootfs());
+        btnImport.setOnClickListener(v -> {
+            if (importing) return;
+            if (RuntimeInstaller.hasBundledRootfs(this) && !RuntimeInstaller.rootfsReady(getFilesDir())) {
+                appendLog("重试：重新解压内置 rootfs");
+                autoImportBundled();
+            } else {
+                pickRootfs();
+            }
+        });
         btnRetry.setOnClickListener(v -> {
             if (importing) return;
             if (RuntimeInstaller.rootfsReady(getFilesDir())) {
@@ -128,6 +136,16 @@ public class MainActivity extends Activity {
         appendLog("DSH Mobile 启动");
         appendLog(RuntimeInstaller.describeEnv(this));
         appendLog("bundledRootfs=" + RuntimeInstaller.hasBundledRootfs(this));
+        // 上次解压被中断（闪退 / 系统杀进程 / 出错）→ 清理残留后重新解压
+        if (RuntimeInstaller.hasInterruptedExtraction(getFilesDir())) {
+            appendLog("检测到上次 rootfs 解压未完成，清理残留后重新解压");
+            RuntimeInstaller.deleteQuietly(new File(getFilesDir(), "rootfs"));
+            if (RuntimeInstaller.hasInterruptedExtraction(getFilesDir())) {
+                appendLog("残留清理失败，请到系统设置里「清除数据」后重开 App");
+                showImportUi("上次解压残留无法清理。\n\n请到「设置 → 应用 → DSH → 存储 → 清除数据」，然后重新打开 App。");
+                return;
+            }
+        }
         if (RuntimeInstaller.rootfsReady(getFilesDir())) {
             startServer();
         } else if (RuntimeInstaller.hasBundledRootfs(this)) {
@@ -262,7 +280,8 @@ public class MainActivity extends Activity {
                 + "导入后 App 自带运行时，不需要 Termux，也不需要电脑。");
         progress.setVisibility(View.GONE);
         btnImport.setVisibility(View.VISIBLE);
-        btnImport.setText("导入 rootfs 包");
+        btnImport.setText(RuntimeInstaller.hasBundledRootfs(this) ? "重试解压内置 rootfs" : "导入 rootfs 包");
+        btnRetry.setText("重试");
         btnRetry.setVisibility(View.VISIBLE);
         btnLog.setVisibility(View.VISIBLE);
         btnTermux.setVisibility(View.VISIBLE);

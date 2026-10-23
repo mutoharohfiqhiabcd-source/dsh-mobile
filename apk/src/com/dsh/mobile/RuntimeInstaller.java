@@ -26,6 +26,8 @@ public final class RuntimeInstaller {
     public static final String ASSET_ROOTFS = "rootfs.tar.gz";
     /** 解压所需最小空间（解析后 ~3 GB + 余量） */
     public static final long NEED_BYTES = 1200L * 1024 * 1024;
+    /** 解压进行中标记：存在则表示上次解压未完成，启动时应清理重来。 */
+    public static final String MARK_IN_PROGRESS = ".dsh-extract-in-progress";
 
     public interface Progress {
         void onProgress(long entries, String currentName);
@@ -107,7 +109,10 @@ public final class RuntimeInstaller {
     }
 
     public static boolean rootfsReady(File filesDir) {
-        if (!new File(filesDir, "rootfs/etc/debian_version").exists()) return false;
+        File rootfs = new File(filesDir, "rootfs");
+        // 上次解压未完成（闪退/被杀/出错）→ 判定未就绪，启动时会清理重来
+        if (new File(rootfs, MARK_IN_PROGRESS).exists()) return false;
+        if (!new File(rootfs, "etc/debian_version").exists()) return false;
         // 有效性检查：工作区包必须已链接（旧版本/损坏的 rootfs 缺这个 → 重新解压）
         File cordis = new File(filesDir, "rootfs/opt/dsh/node_modules/@deepseek-ai/cordis/package.json");
         if (!cordis.exists()) {
@@ -116,6 +121,12 @@ public final class RuntimeInstaller {
         }
         return true;
     }
+
+    /** 上次解压是否被中断（存在进行中标记）。 */
+    public static boolean hasInterruptedExtraction(File filesDir) {
+        return new File(new File(filesDir, "rootfs"), MARK_IN_PROGRESS).exists();
+    }
+
 
     // ── 解压（自带 tar.gz 解析）─────────────────────────────────────────
 
@@ -129,32 +140,64 @@ public final class RuntimeInstaller {
                     + " MB，至少需要 " + (NEED_BYTES / 1024 / 1024) + " MB");
         }
 
-        File tmp = new File(parent, destDir.getName() + ".tmp-" + System.currentTimeMillis());
-        if (!tmp.mkdirs()) {
-            throw new IOException("无法创建解压目录: " + tmp
-                    + "（parent=" + parent.getAbsolutePath()
-                    + " exists=" + parent.exists()
+        // 1) 清理旧目录：优先 rename 成 .old-<ts>（rename 不关心目录内容/权限，比递归删除可靠），
+        //    删除放后台线程做，避免 3 GB / 8 万个文件卡住解压流程。
+        if (destDir.exists()) {
+            File old = new File(parent, destDir.getName() + ".old-" + System.currentTimeMillis());
+            if (destDir.renameTo(old)) {
+                Log.i(TAG, "旧 rootfs 已移出 " + old.getAbsolutePath() + "，后台删除");
+                scheduleDelete(old);
+            } else {
+                Log.w(TAG, "旧 rootfs rename 失败，改为直接递归删除: " + destDir);
+                deleteQuietly(destDir);
+                if (destDir.exists()) {
+                    throw new IOException("旧 rootfs 无法清理: " + destDir
+                            + "（可尝试「设置 → 应用 → DSH → 存储 → 清除数据」后重开）");
+                }
+            }
+        }
+
+        // 2) 直接解压到目标目录（不再 tmp + rename：Android 16 上 rename 目录可能失败）
+        if (!destDir.mkdirs()) {
+            throw new IOException("无法创建解压目录: " + destDir
+                    + "（parent exists=" + parent.exists()
                     + " canWrite=" + parent.canWrite()
                     + " usable=" + (parent.getUsableSpace() / 1024 / 1024) + " MB）");
         }
 
+        // 3) 进行中标记：解压期间存在；成功后才删除。中途失败 → 下次启动整体清理重来。
+        File mark = new File(destDir, MARK_IN_PROGRESS);
+        try (FileOutputStream fo = new FileOutputStream(mark)) {
+            fo.write("extracting".getBytes("UTF-8"));
+        } catch (Exception e) {
+            Log.w(TAG, "write in-progress marker failed", e);
+        }
+
         long count;
         try {
-            count = TarGzExtractor.extract(raw, tmp, (n, name) -> {
+            count = TarGzExtractor.extract(raw, destDir, (n, name) -> {
                 if (cb != null) cb.onProgress(n, name);
             });
         } catch (Throwable e) {
-            deleteQuietly(tmp);
+            Log.e(TAG, "extract failed, keep marker for cleanup on next launch", e);
             throw e;
         }
 
-        deleteQuietly(destDir);
-        if (!tmp.renameTo(destDir)) {
-            deleteQuietly(tmp);
-            throw new IOException("无法把解压结果重命名为 " + destDir + "（tmp=" + tmp + "）");
-        }
+        deleteQuietly(mark);
+        Log.i(TAG, "rootfs 解压完成: " + count + " 条目");
         return count;
     }
+
+    /** 后台线程删除（不阻塞解压流程）。 */
+    private static void scheduleDelete(final File f) {
+        Thread t = new Thread(() -> {
+            deleteQuietly(f);
+            Log.i(TAG, "后台删除完成: " + f.getAbsolutePath() + " exists=" + f.exists());
+        }, "rootfs-cleanup");
+        t.setDaemon(true);
+        t.start();
+    }
+
 
     // ── 补丁 / 覆盖层 ──────────────────────────────────────────────────
 

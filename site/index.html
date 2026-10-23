@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>DSH Mobile — 把 DeepSeek Harness 装进手机</title>
+<meta name="description" content="DSH Mobile：把 DeepSeek Harness (DSH) 打包成单文件 Android APK。内置 proot + Debian 12 + Node.js 24，装上点图标即用，无需电脑、Termux 或 root。" />
+<meta property="og:title" content="DSH Mobile — 把 DeepSeek Harness 装进手机" />
+<meta property="og:description" content="单文件 Android APK，内置 proot + Debian 12 + Node.js 24 + DSH。无需电脑 / Termux / root。" />
+<meta property="og:image" content="assets/shot-chat.jpg" />
+<link rel="icon" href="assets/icon-512.png" />
+<style>
+  :root {
+    --bg: #0a0c0f;
+    --bg-soft: #11151a;
+    --card: #151a21;
+    --card-2: #1a212a;
+    --border: #232b35;
+    --text: #e8eef6;
+    --muted: #8a97a6;
+    --accent: #4f8cff;
+    --accent-2: #7ee787;
+    --max: 1120px;
+    --radius: 16px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background:
+      radial-gradient(1100px 520px at 50% -180px, #17222f 0%, var(--bg) 62%),
+      var(--bg);
+    color: var(--text);
+    font: 16px/1.72 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  img { max-width: 100%; }
+  .wrap { max-width: var(--max); margin: 0 auto; padding: 0 22px; }
+
+  /* ── nav ───────────────────────────────────────────── */
+  header.nav {
+    position: sticky; top: 0; z-index: 40;
+    backdrop-filter: blur(14px);
+    background: rgba(10, 12, 15, .74);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-inner { display: flex; align-items: center; justify-content: space-between; height: 60px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--text); letter-spacing: .2px; }
+  .brand img { width: 30px; height: 30px; border-radius: 9px; background: #fff; padding: 2px; }
+  .brand small { color: var(--muted); font-weight: 500; font-size: 12px; margin-left: 2px; }
+  .nav-links { display: flex; gap: 20px; align-items: center; font-size: 14px; }
+  .nav-links a { color: var(--muted); }
+  .nav-links a:hover { color: var(--text); text-decoration: none; }
+
+  /* ── buttons ───────────────────────────────────────── */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+    padding: 13px 22px; border-radius: 12px; font-weight: 650; font-size: 15px;
+    border: 1px solid transparent; transition: transform .12s ease, background .15s ease, border-color .15s ease;
+    white-space: nowrap;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn-primary { background: linear-gradient(180deg, #5b96ff, #3f7df0); color: #04101f; box-shadow: 0 12px 30px -12px #3f7df0; }
+  .btn-primary:hover { background: linear-gradient(180deg, #6ea3ff, #4c88f5); text-decoration: none; }
+  .btn-ghost { border-color: var(--border); color: var(--text); background: var(--bg-soft); }
+  .btn-ghost:hover { background: var(--card-2); text-decoration: none; }
+  .btn-sm { padding: 9px 15px; font-size: 13.5px; border-radius: 10px; }
+
+  /* ── hero ──────────────────────────────────────────── */
+  .hero { padding: 68px 0 36px; }
+  .hero-grid { display: grid; grid-template-columns: 1.06fr .94fr; gap: 48px; align-items: center; }
+  .tag {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 12.5px; color: var(--accent-2);
+    border: 1px solid #1f4327; background: #0e1b13;
+    padding: 5px 11px; border-radius: 999px; margin-bottom: 18px;
+  }
+  h1 { font-size: 46px; line-height: 1.13; margin: 0 0 16px; letter-spacing: -.8px; }
+  h1 .grad { background: linear-gradient(92deg, #6ba1ff 10%, #7ee787 90%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .lead { color: var(--muted); font-size: 16.5px; margin: 0 0 26px; max-width: 560px; }
+  .lead b { color: var(--text); font-weight: 600; }
+  .cta { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .meta { display: flex; gap: 18px; flex-wrap: wrap; color: var(--muted); font-size: 13px; margin-top: 18px; }
+  .meta b { color: var(--text); font-weight: 600; }
+
+  /* phone mockups */
+  .phone {
+    position: relative; border-radius: 34px; padding: 10px;
+    background: linear-gradient(180deg, #1a2129, #0e1217);
+    border: 1px solid #2a333f;
+    box-shadow: 0 50px 110px -40px #000, 0 0 0 1px rgba(255,255,255,.03) inset;
+    max-width: 330px; margin-left: auto;
+  }
+  .phone::before {
+    content: ""; position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
+    width: 82px; height: 20px; border-radius: 12px; background: #05070a; z-index: 2;
+  }
+  .phone img { display: block; width: 100%; border-radius: 26px; }
+  .phone.small { max-width: 240px; }
+  .phone.tiny { max-width: 190px; }
+
+  /* ── sections ──────────────────────────────────────── */
+  section { padding: 56px 0; }
+  .eyebrow { color: var(--accent-2); font-size: 12.5px; letter-spacing: 1.4px; text-transform: uppercase; margin-bottom: 10px; }
+  section h2 { font-size: 27px; margin: 0 0 8px; letter-spacing: -.4px; }
+  section .sub { color: var(--muted); margin: 0 0 28px; max-width: 640px; }
+
+  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .card {
+    background: linear-gradient(180deg, var(--card), var(--bg-soft));
+    border: 1px solid var(--border); border-radius: var(--radius); padding: 19px;
+    transition: border-color .15s ease, transform .15s ease;
+  }
+  .card:hover { border-color: #33404e; transform: translateY(-2px); }
+  .card .ico {
+    width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    background: #0f1c2b; border: 1px solid #1d3350; font-size: 17px; margin-bottom: 11px;
+  }
+  .card h3 { margin: 0 0 6px; font-size: 15px; }
+  .card p { margin: 0; color: var(--muted); font-size: 13.5px; }
+
+  /* ── gallery ───────────────────────────────────────── */
+  .shots-wide { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .shot {
+    position: relative; display: block;
+    border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden;
+    background: var(--card); transition: border-color .15s ease, transform .15s ease;
+  }
+  .shot:hover { border-color: #3a4756; transform: translateY(-2px); }
+  .shot img { display: block; width: 100%; }
+  .shot .cap {
+    display: flex; justify-content: space-between; align-items: center; gap: 10px;
+    padding: 11px 14px; border-top: 1px solid var(--border);
+    color: var(--muted); font-size: 13px;
+  }
+  .shot .cap b { color: var(--text); font-weight: 600; }
+  .shot .cap span { color: #5f6b7a; font-size: 12px; }
+  .shot-hero { margin-bottom: 16px; }
+
+  .shots-phones { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 16px; }
+  .shots-phones .shot { background: transparent; border: 0; }
+  .shots-phones .shot img { border: 1px solid var(--border); border-radius: 22px; }
+  .shots-phones .cap { border: 0; padding: 10px 4px 0; }
+
+  /* ── flow ──────────────────────────────────────────── */
+  .flow {
+    background: var(--bg-soft); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 20px 22px; overflow: auto; color: #c8d3e0;
+    font: 13.5px/1.8 ui-monospace, SFMono-Regular, Consolas, monospace; white-space: pre;
+  }
+  .two-col { display: grid; grid-template-columns: 1.15fr .85fr; gap: 30px; align-items: center; }
+  .two-col.rev { grid-template-columns: .85fr 1.15fr; }
+
+  ol.steps { counter-reset: s; list-style: none; padding: 0; margin: 0; }
+  ol.steps li { position: relative; padding: 0 0 18px 44px; color: var(--muted); }
+  ol.steps li:last-child { padding-bottom: 0; }
+  ol.steps li::before {
+    counter-increment: s; content: counter(s);
+    position: absolute; left: 0; top: 0;
+    width: 27px; height: 27px; border-radius: 9px;
+    background: #0f1c2b; border: 1px solid #1d3350;
+    color: var(--text); font-size: 13px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  ol.steps li b { color: var(--text); }
+
+  /* ── faq ───────────────────────────────────────────── */
+  details {
+    background: linear-gradient(180deg, var(--card), var(--bg-soft));
+    border: 1px solid var(--border); border-radius: 13px;
+    padding: 15px 17px; margin-bottom: 10px;
+  }
+  details[open] { border-color: #33404e; }
+  details summary { cursor: pointer; font-weight: 600; font-size: 14.5px; list-style: none; display: flex; justify-content: space-between; gap: 14px; }
+  details summary::-webkit-details-marker { display: none; }
+  details summary::after { content: "＋"; color: var(--muted); font-weight: 400; }
+  details[open] summary::after { content: "－"; }
+  details p { color: var(--muted); font-size: 14px; margin: 11px 0 0; }
+
+  /* ── footer ────────────────────────────────────────── */
+  footer { border-top: 1px solid var(--border); padding: 30px 0 50px; color: var(--muted); font-size: 13.5px; }
+  footer .row { display: flex; justify-content: space-between; gap: 18px; flex-wrap: wrap; }
+  footer a { color: var(--muted); }
+  footer a:hover { color: var(--text); }
+
+  @media (max-width: 900px) {
+    .hero-grid, .two-col, .two-col.rev { grid-template-columns: 1fr; gap: 30px; }
+    .phone { margin: 0 auto; }
+    .cards { grid-template-columns: 1fr 1fr; }
+    .shots-wide { grid-template-columns: 1fr; }
+    h1 { font-size: 36px; }
+  }
+  @media (max-width: 620px) {
+    .cards, .shots-phones { grid-template-columns: 1fr; }
+    .nav-links { display: none; }
+    .hero { padding-top: 44px; }
+    .shots-phones .phone { max-width: 260px; margin: 0 auto; }
+    section { padding: 42px 0; }
+  }
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav-inner">
+    <div class="brand"><img src="assets/icon-512.png" alt="" /> DSH Mobile <small>预览版</small></div>
+    <nav class="nav-links">
+      <a href="#download">下载</a>
+      <a href="#shots">截图</a>
+      <a href="#features">特性</a>
+      <a href="#how">原理</a>
+      <a href="#faq">常见问题</a>
+      <a href="https://github.com/mutoharohfiqabcd-source/dsh-mobile" target="_blank" rel="noreferrer">GitHub ↗</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <!-- HERO -->
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <div class="tag">● 单文件 APK · 装上即用</div>
+        <h1>把 <span class="grad">DeepSeek Harness</span><br />装进你的手机</h1>
+        <p class="lead">
+          一个 APK 内置 <b>proot + Debian 12 + Node.js 24 + DSH 本体</b>。
+          安装、点图标、直接用 —— 不需要电脑、不需要 Termux、不需要 root，
+          也不用导入 rootfs 或粘贴 token。
+        </p>
+        <div class="cta" id="download">
+          <a class="btn btn-primary" href="https://github.com/mutoharohfiqabcd-source/dsh-mobile/releases/latest/download/DSH-Mobile-v4.4-arm64.apk">
+            ⬇ 下载 APK（893 MB）
+          </a>
+          <a class="btn btn-ghost" href="https://github.com/mutoharohfiqabcd-source/dsh-mobile/releases/latest" target="_blank" rel="noreferrer">
+            查看所有版本
+          </a>
+        </div>
+        <div class="meta">
+          <span>版本 <b>4.4</b></span>
+          <span>架构 <b>arm64-v8a</b></span>
+          <span>系统 <b>Android 8.0+</b></span>
+          <span>空间 <b>约 4 GB</b></span>
+          <span>许可 <b>MIT</b></span>
+        </div>
+        <div class="meta" style="margin-top:10px;color:var(--accent-2)">
+          <span>v4.4：修复 Android 16 上 rootfs 解压失败（不再依赖目录 rename），解压中断可自动恢复</span>
+        </div>
+      </div>
+      <div class="phone">
+        <img src="assets/shot-chat.jpg" alt="DSH Mobile 对话界面（深色主题，思考 + 回复）" />
+      </div>
+    </div>
+  </section>
+
+  <!-- SCREENSHOTS -->
+  <section id="shots">
+    <div class="wrap">
+      <div class="eyebrow">真机截图</div>
+      <h2>跑在 Android 手机上的 DSH</h2>
+      <p class="sub">全部截图来自 arm64 / Android 12 真机，界面由 App 内置 WebView 打开本地 DSH 服务。</p>
+
+      <a class="shot shot-hero" href="assets/shot-home.jpg" target="_blank">
+        <img src="assets/shot-home.jpg" alt="横屏 / 平板布局：侧边栏 + 会话区" />
+        <div class="cap"><b>主界面 · 横屏 / 平板布局</b><span>侧边栏 + 工作区 + 会话</span></div>
+      </a>
+
+      <div class="shots-wide">
+        <a class="shot" href="assets/shot-model.jpg" target="_blank">
+          <img src="assets/shot-model.jpg" alt="模型选择与会话" />
+          <div class="cap"><b>对话 + 模型选择</b><span>DeepSeek-V41-Flash Max</span></div>
+        </a>
+        <a class="shot" href="assets/shot-settings.jpg" target="_blank">
+          <img src="assets/shot-settings.jpg" alt="设置面板" />
+          <div class="cap"><b>设置面板</b><span>模型 / 插件 / Agent 预设</span></div>
+        </a>
+      </div>
+
+      <a class="shot shot-hero" href="assets/shot-splash.jpg" target="_blank" style="margin-top:16px">
+        <img src="assets/shot-splash.jpg" alt="启动画面：proot → Debian → node" />
+        <div class="cap"><b>首次启动 · 自动解压并拉起运行时</b><span>proot → Debian → node</span></div>
+      </a>
+
+      <div class="shots-wide">
+        <a class="shot" href="assets/shot-log.jpg" target="_blank" style="max-width:420px;justify-self:center">
+          <img src="assets/shot-log.jpg" alt="内置运行日志" />
+          <div class="cap"><b>内置运行日志</b><span>启动 / 解压 / 补丁 / 错误</span></div>
+        </a>
+        <a class="shot" href="assets/shot-appinfo.jpg" target="_blank" style="max-width:420px;justify-self:center">
+          <img src="assets/shot-appinfo.jpg" alt="应用信息：DSH 版本与存储占用" />
+          <div class="cap"><b>应用信息</b><span>版本 / 存储占用</span></div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section id="features">
+    <div class="wrap">
+      <div class="eyebrow">为什么值得装</div>
+      <h2>一个 APK，全套运行时</h2>
+      <p class="sub">官方 DSH 运行时没有 Android 版，这个项目把「免 root 的 Linux 用户空间」整套塞进了一个安装包。</p>
+      <div class="cards">
+        <div class="card">
+          <div class="ico">📦</div>
+          <h3>单文件安装</h3>
+          <p>一个 APK = 运行时 + DSH 本体，没有外部依赖，不需要电脑配合。</p>
+        </div>
+        <div class="card">
+          <div class="ico">⚡</div>
+          <h3>零配置启动</h3>
+          <p>自动解压 rootfs、自动启动 proot/node、自动捕获 token 并打开界面。</p>
+        </div>
+        <div class="card">
+          <div class="ico">🔓</div>
+          <h3>不需要 root</h3>
+          <p>proot 是用户态实现，普通 App 权限即可运行，不动系统分区。</p>
+        </div>
+        <div class="card">
+          <div class="ico">🌙</div>
+          <h3>后台保活</h3>
+          <p>前台服务 + 常驻通知：切后台、划掉任务后 DSH 继续运行，通知里可停止。</p>
+        </div>
+        <div class="card">
+          <div class="ico">🧩</div>
+          <h3>旧 WebView 兼容</h3>
+          <p>内置 ES2023/2024 polyfill（Promise.withResolvers 等），老内核也能跑前端。</p>
+        </div>
+        <div class="card">
+          <div class="ico">🩺</div>
+          <h3>自带诊断</h3>
+          <p>悬浮「⋯」随时看日志：网页 console、JS 异常、WebSocket 生命周期全可见。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW -->
+  <section id="how">
+    <div class="wrap">
+      <div class="eyebrow">工作原理</div>
+      <h2>为什么套一层 Debian</h2>
+      <p class="sub">官方 DSH 支持 Linux arm64 + glibc，但 Android 用的是 Bionic libc —— 所以套一层 Debian，把手机伪装成官方支持的平台。</p>
+      <div class="flow">APK（assets 内塞着 Debian rootfs + Node.js 24 + DSH 源码）
+ │  首次启动：解压到 App 私有目录（约 3 GB）
+ ▼
+proot（用户态 chroot / ptrace，无需 root、无需内核模块）
+ │
+ ▼
+Debian 12 (aarch64, glibc)  →  Node.js 24  →  DSH web server (127.0.0.1:3080)
+                                                  │
+                                                  ▼
+                                     App 内置 WebView 直接打开</div>
+    </div>
+  </section>
+
+  <!-- INSTALL -->
+  <section>
+    <div class="wrap">
+      <div>
+        <div class="eyebrow">上手</div>
+        <h2>三步开始使用</h2>
+        <p class="sub">首次启动需要解压约 3 GB 的运行时，之后每次点图标几秒进入。</p>
+        <ol class="steps">
+          <li><b>下载安装</b>：允许「安装未知来源应用」，安装 APK（约 893 MB）。</li>
+          <li><b>首次启动</b>：授予存储权限 → 自动解压 rootfs，约 8–15 分钟（保持前台）。</li>
+          <li><b>开始使用</b>：自动进入 DSH 界面；首次需自行登录 / 配置模型，之后切后台也会保持运行。</li>
+        </ol>
+        <div style="height:18px"></div>
+        <a class="btn btn-primary btn-sm" href="https://github.com/mutoharohfiqabcd-source/dsh-mobile/releases/latest">前往下载 →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- DIAGNOSTICS -->
+  <section>
+    <div class="wrap">
+      <div class="eyebrow">可诊断</div>
+      <h2>出问题能自己查</h2>
+      <p class="sub">手机上开不了 DevTools 也不怕：App 把网页 console、JS 异常、WebSocket 生命周期全部写进内置日志，悬浮按钮随时「查看 / 复制」。</p>
+      <ul style="color:var(--muted);font-size:14.5px;padding-left:20px;margin:0">
+        <li>启动过程逐行可见（解压条目数、proot 输出、node 启动）</li>
+        <li>网页侧错误捕获：<code>Promise.withResolvers</code> 这类兼容问题一眼定位</li>
+        <li>一键复制日志，方便反馈问题</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq">
+    <div class="wrap">
+      <div class="eyebrow">FAQ</div>
+      <h2>常见问题</h2>
+      <p class="sub"></p>
+
+      <details>
+        <summary>为什么安装包这么大（893 MB）？</summary>
+        <p>里面是完整的 Debian 12 用户空间 + Node.js 24 + DSH 及其依赖。Android 的 libc 与官方 Linux 运行时二进制不兼容，必须自带一整套 glibc 环境。</p>
+      </details>
+
+      <details>
+        <summary>我的手机能装吗？</summary>
+        <p>需要 arm64（绝大多数 2019 年后的安卓机）、Android 8.0+、约 4 GB 空闲存储。x86 模拟器不支持。</p>
+      </details>
+
+      <details>
+        <summary>为什么安装时提示「为旧版 Android 打造」？</summary>
+        <p>项目刻意把 targetSdk 定在 28 —— Android 10+ 禁止普通应用从私有目录执行二进制 / 加载动态库，而 proot 和它的 loader 都在私有目录里。这是 Termux 同款的历史豁免。</p>
+      </details>
+
+      <details>
+        <summary>APK 里包含 API key 吗？</summary>
+        <p>不包含。任何 Key / 账号 / 会话数据都是你自己的，首次使用需要在 DSH 里自行登录或配置模型。</p>
+      </details>
+
+      <details>
+        <summary>会耗电吗？切后台会被杀吗？</summary>
+        <p>proot 有 10–30% 性能开销，后台常驻会增加耗电；App 用前台服务保活，切后台 / 划掉任务后 DSH 继续运行。长期挂后台建议把 App 加入电池优化白名单。</p>
+      </details>
+
+      <details>
+        <summary>开源吗？能自己构建吗？</summary>
+        <p>MIT 许可。源码、构建脚本、rootfs 制作脚本和 15 条踩坑记录都在 <a href="https://github.com/mutoharohfiqabcd-source/dsh-mobile" target="_blank" rel="noreferrer">GitHub 仓库</a> 里。</p>
+      </details>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap row">
+    <div><b>DSH Mobile</b> · MIT License · 与 DeepSeek 官方无关，仅供学习研究</div>
+    <div>
+      <a href="https://github.com/mutoharohfiqabcd-source/dsh-mobile" target="_blank" rel="noreferrer">GitHub</a> ·
+      <a href="https://github.com/mutoharohfiqabcd-source/dsh-mobile/releases" target="_blank" rel="noreferrer">Releases</a> ·
+      <a href="https://github.com/deepseek-ai/deepseek-harness" target="_blank" rel="noreferrer">DeepSeek Harness</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

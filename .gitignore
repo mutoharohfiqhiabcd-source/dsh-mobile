@@ -46,3 +46,7 @@ __pycache__/
 # debug dumps
 *.html
 
+
+# allow the landing page
+!site/index.html
+
